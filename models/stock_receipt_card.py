@@ -1,0 +1,179 @@
+
+from odoo import models, fields, api
+from odoo.exceptions import UserError, ValidationError
+import logging
+_logger = logging.getLogger(__name__)
+class StockReceiptCard(models.Model):
+    _name = 'stock.receipt.card'
+    _description = 'Thẻ Cấp'
+
+    name = fields.Char(
+        string='Mã Thẻ',
+        required=True,
+        readonly=True,
+        help="Mã định danh duy nhất của thẻ RFID"
+    )
+    company_id = fields.Many2one(
+        'res.company',
+        string='Company',
+        default=lambda self: self.env.company,
+        required=True,
+        readonly=True
+    )
+    receipt_id = fields.Many2one(
+        'stock.receipt',
+        string='Phiếu Nhập',
+        required=True,
+        ondelete='cascade'
+    )
+    quantity = fields.Integer(string='Số Lượng', default=1)  # Thêm trường quantity
+    picking_id = fields.Many2one(  
+        'stock.picking',
+        string='Phiếu Kho',
+    )
+    location_id = fields.Many2one(
+        'stock.location',
+        string='Kho Đích',
+        required=True,
+        domain="[('usage', '=', 'internal'), ('company_id', '=', company_id)]",
+        related='receipt_id.location_id',
+    )
+    
+    status = fields.Selection(
+        [('input', 'Nhập Kho'), ('output', 'Xuất Kho')],    
+        string='Trạng Thái',
+        default='input',
+        help="Trạng thái của thẻ, có thể là 'Nhập Kho' hoặc 'Xuất Kho'"
+    )
+    
+    state = fields.Selection(
+        [('in', 'Đã Vào'), ('out', 'Đã Ra')],
+        default='in',
+    )
+    
+    create_date = fields.Datetime(
+        string='Ngày Nhập', default=fields.Datetime.now, readonly=True, copy=False
+    )
+    
+    product_id = fields.Many2one(
+        'product.template',
+        string='Sản Phẩm',
+        readonly=True,
+        related='receipt_id.product_id',
+    )
+    
+    def action_export_cards(self):
+        """Open popup to scan RFID tags for stock issuance from selected cards"""
+        if not self:
+            raise UserError("Vui lòng chọn ít nhất một sản phẩm để xuất kho!")
+         # Create stock.picking
+        picking_type = self.env['stock.picking.type'].search([
+            ('code', '=', 'outgoing'),
+            ('company_id', '=', self.env.company.id)
+        ], limit=1)
+        if not picking_type:
+            raise UserError("Không tìm thấy loại phiếu xuất kho!")
+        product_quantities = {}
+        for card in self:
+            if card.status == 'output':
+                raise UserError(f"Sản phẩm {card.name} đã được xuất kho!")
+            product = self.env['product.product'].search([('product_tmpl_id', '=', card.product_id.id)], limit=1)
+            if not product:
+                raise UserError(f"Không tìm thấy biến thể sản phẩm cho {card.product_id.name}!")
+            if product.id not in product_quantities:
+                product_quantities[product.id] = {
+                    'quantity': 0,
+                }
+            product_quantities[product.id]['quantity'] += card.quantity
+
+        picking = self.env['stock.picking'].create({
+            'picking_type_id': picking_type.id,
+            'location_id': self.mapped('location_id')[0].id,
+            'location_dest_id': picking_type.default_location_dest_id.id,
+            'state': 'draft',
+        })
+
+        # Create stock.move
+        for product_id, data in product_quantities.items():
+            self.env['stock.move'].create({
+                'picking_id': picking.id,
+                'product_id': product_id,
+                'product_uom_qty': data['quantity'],
+                'product_uom': self.env['product.product'].browse(product_id).uom_id.id,
+                'location_id': picking.location_id.id,
+                'location_dest_id': picking.location_dest_id.id,
+                'name': f"Xuất kho: {self.env['product.product'].browse(product_id).name}"
+            })
+            
+        """Xử lý phiếu kho: xác nhận"""
+        picking.action_confirm()
+        picking.action_assign()
+        picking.button_validate()
+        self.write({
+            'status': 'output',
+            'picking_id': picking.id,
+            'location_id': picking_type.default_location_dest_id.id
+        })
+        
+    
+        
+    def action_import_cards(self):
+        """Xử lý nhập kho từ các thẻ liên quan đến phiếu nhập"""
+        product_quantities = {}
+        location_id = self.env['stock.location'].search([
+            ('usage', '=', 'internal'),
+            ('company_id', '=', self.company_id.id)
+        ], limit=1) 
+        if not location_id:
+            raise ValidationError("Không tìm thấy kho đích phù hợp!")
+        for card in self:
+            _logger.info(f"Processing card: {card.name}, Status: {card.status}, Quantity: {card.quantity}")
+            # Tổng hợp số lượng theo product_id từ card_ids
+            if card.status == 'input':
+                raise UserError(f"Sản phẩm {card.name} đã được nhập kho!")
+            product = self.env['product.product'].search([('product_tmpl_id', '=', card.product_id.id)], limit=1)
+            if not product:
+                raise UserError(f"Không tìm thấy biến thể sản phẩm cho {card.product_id.name}!")
+            if product.id not in product_quantities:
+                product_quantities[product.id] = {
+                    'quantity': 0,
+                }
+            product_quantities[product.id]['quantity'] += card.quantity
+           
+        
+        # Tạo stock.picking cho nhập kho
+        picking_type = self.env['stock.picking.type'].search([
+            ('code', '=', 'incoming'),
+            ('company_id', '=', self.env.company.id)
+        ], limit=1)
+        if not picking_type:
+            raise UserError("Không tìm thấy loại phiếu nhập kho!")
+       
+        picking = self.env['stock.picking'].create({
+            'picking_type_id': picking_type.id,
+            'location_id': picking_type.default_location_src_id.id,  # Nguồn: thường là supplier
+            'location_dest_id': location_id.id,  # Đích: kho nội bộ
+            'state': 'draft',
+        })
+        
+        # Tạo stock.move cho từng sản phẩm
+        for product_id, data in product_quantities.items():
+            self.env['stock.move'].create({
+                'picking_id': picking.id,
+                'product_id': product_id,
+                'product_uom_qty': data['quantity'],
+                'product_uom': self.env['product.product'].browse(product_id).uom_id.id,
+                'location_id': picking.location_id.id,
+                'location_dest_id': picking.location_dest_id.id,
+                'name': f"Nhập kho: {self.env['product.product'].browse(product_id).name}"
+            })
+        # Xác nhận phiếu kho
+        picking.action_confirm()
+        picking.action_assign()
+        picking.button_validate()
+        # Cập nhật trạng thái và picking_id cho các thẻ
+        self.write({
+            'status': 'input',
+            'picking_id': picking.id,
+            'location_id': location_id.id
+        })

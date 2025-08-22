@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="t4tek_device_tracking_group" model="ir.module.category">
+        <field name="name">T4TEK Tracking Role</field>
+        <field name="sequence">500</field>
+    </record>
+    <record id="operator" model="res.groups">
+        <field name="name">Operator</field>
+        <field name="category_id"
+            ref="t4tek_device_tracking.t4tek_device_tracking_group" />
+    </record>
+  
+</odoo>

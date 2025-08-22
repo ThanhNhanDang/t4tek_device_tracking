@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+
+access_stock_receipt_oprator,stock.receipt.operator,model_stock_receipt,operator,1,1,1,1
+access_stock_receipt_oprator_card,stock.receipt.card.operator,model_stock_receipt_card,operator,1,1,1,1
+access_ir_sequence_oprator,ir.sequence.operator,base.model_ir_sequence,operator,1,1,1,1
