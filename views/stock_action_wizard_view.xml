@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Updated Action Wizard Form View with Image -->
+    <record id="view_stock_action_wizard_form" model="ir.ui.view">
+        <field name="name">stock.action.wizard.form</field>
+        <field name="model">stock.action.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Upload Hình Ảnh Xác Minh" js_class='stock_action_wizard'>
+                <header>
+                    <div class="alert alert-info" role="alert">
+                        <strong>Lưu ý:</strong> Bạn cần tải lên hình ảnh xác minh trước khi có thể hoàn thành phiếu kho.
+                    </div>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="picking_id" invisible="1"/>
+                            <field name="image_attachment" 
+                                   widget="image" 
+                                   class="oe_avatar"
+                                   options="{'size': [300, 300], 'preview_image': 'image_attachment'}"
+                                   required="1"/>
+                        </group>
+                        <group>
+                            <div class="text-muted">
+                                <p><i class="fa fa-info-circle"/> Định dạng được hỗ trợ: JPG, PNG, JPEG</p>
+                                
+                                <p><i class="fa fa-info-circle"/> Hình ảnh sẽ được lưu vào phiếu kho để xác minh</p>
+                            </div>
+                        </group>
+                    </group>
+                </sheet>
+                <footer>
+                    <button name="action_confirm" 
+                            string="Xác Nhận" 
+                            type="object" 
+                            class="btn-primary"
+                            data-hotkey="q"/>
+                    <button name="action_cancel" 
+                            string="Hủy" 
+                            type="object"
+                            class="btn-secondary" 
+                            data-hotkey="z"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    
+    <!-- Action for the wizard -->
+    <record id="action_stock_image_upload_wizard" model="ir.actions.act_window">
+        <field name="name">Upload Hình Ảnh Xác Minh</field>
+        <field name="res_model">stock.action.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="view_id" ref="view_stock_action_wizard_form"/>
+    </record>
+</odoo>

@@ -14,13 +14,21 @@ export class StockListController extends ListController {
     super.setup();
     // Services cần thiết
     this.notification = useService("notification");
+    this.company = useService("company");
 
     // Timer configuration
     this.refreshInterval = 5000; // 30 giây (có thể config)
     this.timerActive = true;
     this.intervalId = null;
 
-    console.log("Stock List Controller initialized with auto refresh");
+    this.personErrorBlackListSound = new Audio(
+      "/rfid_reader/static/audio/person_error_black.wav"
+    );
+
+    this.env.services.bus_service.addChannel(this.company.currentCompany.id);
+    this.env.services.bus_service.subscribe("card_notification", (event) => {
+      personErrorBlackListSound.play();
+    });
 
     // Setup timer khi component mount
     onMounted(() => {

@@ -36,9 +36,16 @@ class MainController(http.Controller):
             if not card:
                 return {'error': f'Card with TID {tid} not found'}
             if card.state == "in" and card.status == "input":
+                if card.company_id:
+                    request.env['bus.bus'].sudo()._sendone(
+                        card.company_id,
+                        'card_notification',
+                        {
+                        }
+                    )
                 return {'error': f'Card with TID {tid} is already in input state'}
             elif card.state != "in":
-                card.action_import_cards()
+                # card.action_import_cards()
                 card.state = "in"
             elif card.state == "in" and card.status != "input":
                 card.state = "out"
