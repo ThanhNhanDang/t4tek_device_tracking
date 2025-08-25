@@ -23,31 +23,36 @@
         <field name="name">stock.receipt.form</field>
         <field name="model">stock.receipt</field>
         <field name="arch" type="xml">
-            <form string="Phiếu Ghi Nhận">
+            <form string="Phiếu Nhập Kho Lần Đầu">
+                <footer>
+                    <button string="Hủy" name="action_cancel" type="object" class="btn-secondary"/>
+                </footer>
                 <header>
-                    <button name="action_confirm" type="object" string="Xác Nhận"
-                        class="btn btn-primary" invisible="state != 'draft'"/>
-                    <button name="action_receipt" type="object" string="Phiếu nhận hàng"
-                        class="btn btn-success" invisible="state != 'confirmed'"/>
+                    <button name="action_generate_cards" type="object" string="Cấp thẻ"
+                        class="btn btn-primary" invisible="state == 'done'" />
+                    <button name="action_print" type="object" string="In phiếu xác nhận"
+                        class="btn btn-secondary" invisible="state == 'done'" confirm="" />
+                    <button name="action_confirm" type="object" string="Xác nhận"
+                        class="btn btn-success" invisible="state == 'done'" />
+                    <!-- <button name="action_receipt" type="object" string="Phiếu nhận hàng"
+                        class="btn btn-success" invisible="state == 'done'" /> -->
                     <field name="state" widget="statusbar" statusbar_visible="draft,confirmed,done" />
                 </header>
+                
                 <sheet>
-                    <div class="oe_title">
-                        <h1>
-                            <field name="name" readonly="1" />
-                        </h1>
-                    </div>
+
                     <group>
                         <group>
                             <field name="product_id" />
+                            <field name="name" invisible="1" />
                             <field name="quantity" />
-                            <field name="card_count" />
+                            <field name="card_count" invisible="1" />
                         </group>
                         <group>
                             <field name="create_date" />
                         </group>
                     </group>
-                    <notebook invisible="state != 'done'">
+                    <notebook invisible="not card_ids">
                         <page string="Danh Sách Thẻ Cấp">
                             <field name="card_ids" nolabel="1">
                                 <list editable="bottom">
@@ -69,45 +74,52 @@
         <field name="name">stock.receipt.kanban</field>
         <field name="model">stock.receipt</field>
         <field name="arch" type="xml">
-            <kanban class="o_kanban_mobile" default_group_by="state" context="{'form_view_ref': 't4tek_device_tracking.view_stock_receipt_form', 'target': 'new'}">
-                <field name="name"/>
-                <field name="create_date"/>
-                <field name="product_id"/>
-                <field name="quantity"/>
-                <field name="card_count"/>
-                <field name="location_id"/>
-                <field name="state"/>
-                <!-- <progressbar field="state" colors='{"draft": "info", "confirmed": "warning", "done": "success", "cancelled": "danger"}'/> -->
+            <kanban class="o_kanban_mobile" default_group_by="state"
+                context="{'form_view_ref': 't4tek_device_tracking.view_stock_receipt_form', 'target': 'new'}">
+                <field name="name" />
+                <field name="create_date" />
+                <field name="product_id" />
+                <field name="quantity" />
+                <field name="card_count" />
+                <field name="location_id" />
+                <field name="state" />
+                <!-- <progressbar field="state" colors='{"draft": "info", "confirmed": "warning",
+                "done": "success", "cancelled": "danger"}'/> -->
                 <templates>
                     <t t-name="kanban-box">
-                        <div class="oe_kanban_card oe_kanban_global_click" style="width: 300px; padding: 16px; font-size: 16px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <div class="oe_kanban_card oe_kanban_global_click"
+                            style="width: 300px; padding: 16px; font-size: 16px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                             <div class="o_kanban_record_top" style="margin-bottom: 12px;">
                                 <div class="o_kanban_record_headings">
                                     <strong class="o_kanban_record_title" style="font-size: 20px;">
-                                        <field name="name"/>
+                                        <field name="name" />
                                     </strong>
                                 </div>
                                 <div style="margin-left: 8px;">
-                                    <field name="state" widget="statusbar" readonly="1"/>
+                                    <field name="state" widget="statusbar" readonly="1" />
                                 </div>
                             </div>
                             <div class="o_kanban_record_body" style="line-height: 1.6;">
                                 <div style="margin-bottom: 8px;">
-                                    <strong>Sản Phẩm:</strong> <field name="product_id"/>
+                                    <strong>Sản Phẩm:</strong>
+                                    <field name="product_id" />
                                 </div>
                                 <div style="margin-bottom: 8px;">
-                                    <strong>Số Lượng:</strong> <field name="quantity"/>
+                                    <strong>Số Lượng:</strong>
+                                    <field name="quantity" />
                                     <span> | </span>
-                                    <strong>Thẻ:</strong> <field name="card_count"/>
+                                    <strong>Thẻ:</strong>
+                                    <field name="card_count" />
                                 </div>
                                 <div style="margin-bottom: 8px;">
-                                    <i class="fa fa-warehouse" style="margin-right: 4px;"/> 
-                                    <field name="location_id"/>
+                                    <i class="fa fa-warehouse" style="margin-right: 4px;" />
+                                    <field name="location_id" />
                                 </div>
                             </div>
-                            <div class="o_kanban_record_bottom" style="color: #666; font-size: 14px;">
+                            <div class="o_kanban_record_bottom"
+                                style="color: #666; font-size: 14px;">
                                 <div class="oe_kanban_bottom_left">
-                                    <field name="create_date" widget="date"/>
+                                    <field name="create_date" widget="date" />
                                 </div>
                             </div>
                         </div>
@@ -122,7 +134,7 @@
         <field name="name">stock.receipt.search</field>
         <field name="model">stock.receipt</field>
         <field name="arch" type="xml">
-            <search string="Tìm Kiếm Phiếu Ghi Nhận">
+            <search string="Tìm Kiếm Phiếu Nhập Kho Lần Đầu">
                 <field name="name" />
                 <field name="product_id" />
                 <field name="location_id" />
@@ -148,18 +160,24 @@
 
     <!-- Action -->
     <record id="action_stock_receipt" model="ir.actions.act_window">
-        <field name="name">Phiếu Ghi Nhận</field>
+        <field name="name">Phiếu Nhập Kho Lần Đầu</field>
         <field name="res_model">stock.receipt</field>
         <field name="target">current</field>
         <field name="view_mode">kanban,list,form</field>
-        <field name="context">{'search_default_draft': 1}</field>
+        <field name="context">{'search_default_draft': 1, 'create':0, }</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
-                Tạo phiếu ghi nhận đầu tiên của bạn!
-            </p>
-            <p>
-               Tạo phiếu ghi nhận để sản phẩm của bạn vào kho lần đầu tiên, giúp theo dõi việc nhập hàng vào kho.
+                Tạo Phiếu Nhập Kho đầu tiên của bạn!
             </p>
         </field>
+    </record>
+
+
+    <record id="action_stock_receipt_form" model="ir.actions.act_window">
+        <field name="name">Phiếu Nhập Kho Lần Đầu</field>
+        <field name="res_model">stock.receipt</field>
+        <field name="target">current</field>
+        <field name="view_mode">form</field>
+        <field name="context">{'default_name':'Phiếu nhập kho lần đầu','isDontClose':1}</field>
     </record>
 </odoo>

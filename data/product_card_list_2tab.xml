@@ -1,0 +1,7 @@
+<odoo noupdate="1">
+    <data noupdate="1">
+        <record id="product_card_2tab_record" model="product_card_list.2tab">
+            <field name="custom_view_field">True</field>
+        </record>
+    </data>
+</odoo>

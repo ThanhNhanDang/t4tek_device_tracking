@@ -1,5 +1,5 @@
 from odoo import models, fields, api
-from odoo.exceptions import ValidationError
+from odoo.exceptions import UserError, ValidationError
 import logging
 _logger = logging.getLogger(__name__)
 
@@ -13,7 +13,7 @@ class StockReceipt(models.Model):
         required=True,
         copy=False,
         readonly=True,
-        default='New'
+        default='Phiếu Nhập Kho Lần Đầu'
     )
     
     create_date = fields.Datetime(
@@ -65,6 +65,7 @@ class StockReceipt(models.Model):
         'receipt_id',
         string='Danh Sách Thẻ',
         readonly=True,
+        copy=False,
     )
     
     picking_id = fields.Many2one(
@@ -72,6 +73,25 @@ class StockReceipt(models.Model):
         string='Phiếu Kho',
         readonly=True,
     )
+    
+    def cleanup_old_receipts_cron(self):
+        """
+        Chạy định kỳ để dọn dẹp các phiếu cũ (sử dụng cron job)
+        """
+        from datetime import datetime, timedelta
+        
+        # Xóa các phiếu 'old' cũ hơn 2 giờ
+        time_limit = datetime.now() - timedelta(hours=2)
+        _logger.info("=========================Running cleanup_old_receipts_cron=========================")
+        old_receipts = self.sudo().search([
+            ('state', '!=', 'done'),
+            ('create_date', '<', time_limit)
+        ])
+        
+        if old_receipts:
+            _logger.info(f"Cleaning up {len(old_receipts)} old receipts")
+            old_receipts.unlink()
+    
     
     @api.model
     def _create_sequence_if_not_exists(self):
@@ -97,25 +117,43 @@ class StockReceipt(models.Model):
 
     @api.model
     def create(self, vals):
-        if vals.get('name', 'New') == 'New':
-            self._create_sequence_if_not_exists()
-            vals['name'] = self.env['ir.sequence'].next_by_code('stock.receipt') or 'New'
+        
+        # if vals.get('name', 'New') == 'New':
+        #     self._create_sequence_if_not_exists()
+        #     vals['name'] = self.env['ir.sequence'].next_by_code('stock.receipt') or 'New'
         return super().create(vals)
 
+    def action_print(self):
+        if self.picking_id:
+            if self.picking_id.state not in ['assigned','done']:
+                raise ValidationError("Chưa thể in lúc này!")
+            else: 
+                if self.quantity != len(self.card_ids):
+                    raise ValidationError("Số lượng thẻ cấp không khớp với số lượng yêu cầu!")
+                return self.picking_id.do_print_picking()
+        else: 
+            raise ValidationError("Chưa thể in lúc này!")
+        return
+    
     def action_confirm(self):
         """Xác nhận phiếu nhập"""
-        if not self.product_id or not self.quantity:
-            raise ValidationError("Phiếu nhập phải có sản phẩm và số lượng!")
+        if self.quantity != len(self.card_ids):
+            raise ValidationError("Số lượng thẻ cấp không khớp với số lượng yêu cầu!")
         
         # Create stock.picking
-        picking = self._create_stock_picking()
-        self.picking_id = picking.id
+        # picking = self._create_stock_picking()
+        # self.picking_id = picking.id
         
         # Generate cards
-        
-        self.state = 'confirmed'
-        return self.action_receipt()
-        # self._process_stock_picking()
+        if self.picking_id:
+            if self.picking_id.state not in ['assigned','done']:
+                raise ValidationError("Chưa thể xác nhận lúc này!")
+            else: 
+                return self._process_stock_picking()
+        else: 
+            raise ValidationError("Chưa thể xác nhận lúc này!")
+        # return self.action_receipt()
+       
     def action_receipt(self):
         """Xử lý phiếu nhập kho"""
         if not self.picking_id:
@@ -131,10 +169,11 @@ class StockReceipt(models.Model):
             'res_id': self.picking_id.id,
         }
     def action_generate_cards(self):
+        _logger.info(self.env.context.get('uuid_client', False))
         if self.env.context.get('uuid_client', False):
             self.env['bus.bus'].sudo()._sendone(
                 self.env.context.get('uuid_client', False),
-                'notification',
+                self.env.context.get('uuid_client', False),
                 {
                     "type":"generate_cards",
                     "id":self.id,
@@ -150,18 +189,20 @@ class StockReceipt(models.Model):
             return f"Số lượng thẻ cấp không khớp với số lượng yêu cầu!, {len(tags)}/{self.quantity}" 
         for tag in tags:
             exitRecord = self.env['stock.receipt.card'].search([
-                ('name', '=', tag['Tid']),
+                ('name', '=', tag['Tid']), ('is_used', '=', True)
             ], limit=1)
             if exitRecord:
                 return f"Thẻ {tag['Tid']} đã tồn tại!"
-        
+        if  not self.picking_id:
+            # Create stock.picking if not exists
+            picking = self._create_stock_picking()
+            self.picking_id = picking.id
         # Get product variant
         product_variant = self.product_id.product_variant_ids[0] if self.product_id.product_variant_ids else False
         if not product_variant:
             return f"Không tìm thấy biến thể sản phẩm cho {self.product_id.name}"
         card_records = []
         move_lines = []
-        lots_ids = []
         for tag in tags:
             # Tạo thẻ RFID
             # Tạo stock.quant cho từng thẻ RFID
@@ -173,33 +214,40 @@ class StockReceipt(models.Model):
                 'location_id': self.location_id.id,
             }
             card_records.append((0, 0, card_vals))
-            lots_ids.append((4, lot_id))  # Thêm lot_id vào danh sách lots_ids
-            
-           
-        move_vals = {
-                'name': f'{self.name} - {self.product_id.name} - {tag["Tid"]}',
-                'product_id': product_variant.id,
-                'product_uom_qty': self.quantity,
-                'product_uom': product_variant.uom_id.id,
-                'location_id': self.env.ref('stock.stock_location_suppliers').id,
-                'location_dest_id': self.location_id.id,
-                'company_id': self.company_id.id,
-                'picking_id': self.picking_id.id,
-                'lot_ids': lots_ids
-            }
-        move_lines.append((0, 0, move_vals))
+            move_vals = {
+                    'name': f'{self.name} - {self.product_id.name} - {tag["Tid"]}',
+                    'product_id': product_variant.id,
+                    'product_uom_qty': 1,
+                    'product_uom': product_variant.uom_id.id,
+                    'location_id': self.env.ref('stock.stock_location_suppliers').id,
+                    'location_dest_id': self.location_id.id,
+                    'company_id': self.company_id.id,
+                    'picking_id': self.picking_id.id,
+                    'lot_ids': [lot_id],
+                    'lot_id': lot_id
+                }
+            # _logger.info(f"Creating move line for RFID {tag['Tid']}: {move_vals}")
+            move_lines.append((0, 0, move_vals))
         # Cập nhật card_ids và move_ids_without_package
+        self.card_ids = [(5, 0, 0)]  # Xóa tất cả thẻ hiện có trước khi thêm mới
         self.card_ids = card_records
+        self.picking_id.move_ids_without_package  =  [(5, 0, 0)]  # Xóa tất cả dòng hiện có trước khi thêm mới
         self.picking_id.move_ids_without_package = move_lines
-
+        self.picking_id.action_confirm()
+        self.picking_id.action_assign()
         # Process stock picking after generating cards
-        self._process_stock_picking()
         return "1"
     
     def _create_stock_quant_and_return_lot_id(self, product_variant, rfid_tag):
         """Tạo stock.quant cho từng thẻ RFID"""
         try:
             # Tạo lot/serial number cho RFID tag
+            lots = self.env['stock.lot'].search([('name', '=', rfid_tag), ('product_id','=',product_variant.id)], limit=1)
+            move = self.env['stock.move'].search([('lot_id', '=', rfid_tag), ('product_id','=',product_variant.id)], limit=1)
+            if move:
+                move.unlink()
+            if lots: 
+                lots.unlink()
             lot_vals = {
                 'name': rfid_tag,
                 'product_id': product_variant.id,
@@ -268,10 +316,7 @@ class StockReceipt(models.Model):
     def _process_stock_picking(self):
         """Xử lý phiếu kho: xác nhận và hoàn thành"""
         if self.picking_id:
-            self.picking_id.action_confirm()
-            self.picking_id.action_assign()
-            # self.picking_id.button_validate()
-            self.state = 'done'
+            return self.picking_id.button_validate()
     
     def action_cancel(self):
         """Hủy phiếu nhập"""

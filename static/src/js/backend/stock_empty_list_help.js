@@ -22,23 +22,23 @@ export class StockListController extends ListController {
     this.intervalId = null;
 
     this.personErrorBlackListSound = new Audio(
-      "/rfid_reader/static/audio/person_error_black.wav"
+      "/t4tek_device_tracking/static/audio/person_error_black.wav"
     );
 
-    this.env.services.bus_service.addChannel(this.company.currentCompany.id);
+    this.env.services.bus_service.addChannel("12344");
     this.env.services.bus_service.subscribe("card_notification", (event) => {
-      personErrorBlackListSound.play();
+      this.personErrorBlackListSound.play();
     });
 
     // Setup timer khi component mount
-    onMounted(() => {
-      this.startAutoRefresh();
-    });
+    // onMounted(() => {
+    //   this.startAutoRefresh();
+    // });
 
-    // Cleanup timer khi component unmount
-    onWillUnmount(() => {
-      this.stopAutoRefresh();
-    });
+    // // Cleanup timer khi component unmount
+    // onWillUnmount(() => {
+    //   this.stopAutoRefresh();
+    // });
   }
 
   /**

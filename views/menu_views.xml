@@ -4,19 +4,29 @@
     <menuitem id="operator_view_root"
         name="Device Tracking"
         sequence="50" />
-    <menuitem id="menu_home_page" name="Trang Chủ"
-        parent="operator_view_root" action="action_stock_receipt_card" sequence="10" />
+    <!-- <menuitem id="menu_home_page" name="Trang Chủ"
+        parent="operator_view_root" action="action_stock_receipt_card" sequence="10" /> -->
+    <menuitem id="menu_home_page_2tab" name="Trang Chủ"
+        parent="operator_view_root" action="view_product_card_list_action" sequence="10" />
     <menuitem id="menu_stock_input" name="Nhập Kho"
         parent="operator_view_root" sequence="11" />
-    <menuitem id="menu_stock_receipt_first" name="Phiếu Ghi Nhận"
-        parent="menu_stock_input" action="action_stock_receipt" sequence="1" />
-    <menuitem id="menu_stock_receipt" name="Phiếu Nhập Kho"
-        parent="menu_stock_input" action="action_t4tek_picking_tree_incoming" sequence="2" />
+    <menuitem id="menu_stock_receipt_first" name="Tạo Phiếu Nhập Kho Lần Đầu"
+        parent="menu_stock_input" action="action_stock_receipt_form" sequence="1" />
+    <menuitem id="menu_stock_receipt" name="Tạo Phiếu Tái Nhập Kho"
+        parent="menu_stock_input" action="action_t4tek_picking_tree_incoming_scan_cards" sequence="2" />
     <menuitem id="menu_stock_out" name="Xuất Kho"
-        parent="operator_view_root" action="action_t4tek_picking_tree_outgoing" sequence="12" />
-    <menuitem id="menu_product" name="Sản phẩm"
+        parent="operator_view_root" action="action_t4tek_picking_tree_outgoing_scan_cards" sequence="12" />
+    <menuitem id="menu_product" name="Sản Phẩm"
         parent="operator_view_root" sequence="13" action="stock.product_template_action_product" />
+    <menuitem id="menu_inventory" name="Kiểm Kê"
+        parent="operator_view_root" sequence="13" action="stock.product_template_action_product" />
+    <menuitem id="menu_inventory_first_receipt" name="Phiếu Nhập Kho Lần Đầu"
+        parent="menu_inventory" sequence="13" action="action_stock_receipt" />
+    <menuitem id="menu_inventory_receipt" name="Phiếu Tái Nhập Kho"
+        parent="menu_inventory" sequence="14" action="action_t4tek_picking_tree_incoming" />
+    <menuitem id="menu_inventory_out" name="Phiếu Xuất Kho"
+        parent="menu_inventory" sequence="14" action="action_t4tek_picking_tree_outgoing" />
     <menuitem id="menu_move_history" name="Lịch Sử Di Chuyển"
         parent="operator_view_root" action="stock_t4tek_move_line_action" sequence="14" />
-    
+
 </odoo>

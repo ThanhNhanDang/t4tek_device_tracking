@@ -43,7 +43,17 @@ class StockActionWizard(models.TransientModel):
         # Sau khi lưu hình ảnh, gọi button_validate gốc
         try:
             result = picking.button_validate()
-            
+            if picking.stock_receipt_id:
+                picking.stock_receipt_id.write({'state': 'done'})
+                picking.stock_receipt_id.card_ids.write({'is_used': True})
+            elif picking.picking_type_code == 'outgoing':
+                lot_ids= picking.move_ids_without_package.mapped('lot_id')
+                if lot_ids:
+                    self.env['stock.receipt.card'].search([('name', 'in', lot_ids.mapped('name'))]).write({'status': 'output'})
+            elif picking.picking_type_code == 'incoming':
+                lot_ids= picking.move_ids_without_package.mapped('lot_id')
+                if lot_ids:
+                    self.env['stock.receipt.card'].search([('name', 'in', lot_ids.mapped('name'))]).write({'status': 'input'})
             # Nếu button_validate trả về wizard (như immediate transfer wizard)
             if isinstance(result, dict) and result.get('res_model'):
                 return result

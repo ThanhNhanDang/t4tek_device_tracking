@@ -43,6 +43,11 @@ class StockReceiptCard(models.Model):
         domain="[('usage', '=', 'internal'), ('company_id', '=', company_id)]",
         related='receipt_id.location_id',
     )
+    is_used = fields.Boolean(
+        string='Đã Sử Dụng',
+        default=False,
+        help="Chỉ ra thẻ đã được sử dụng trong một phiếu kho hay chưa"
+    )
     
     status = fields.Selection(
         [('input', 'Nhập Kho'), ('output', 'Xuất Kho')],    
@@ -50,12 +55,10 @@ class StockReceiptCard(models.Model):
         default='input',
         help="Trạng thái của thẻ, có thể là 'Nhập Kho' hoặc 'Xuất Kho'"
     )
-    
     state = fields.Selection(
         [('in', 'Đã Vào'), ('out', 'Đã Ra')],
         default='in',
     )
-    
     create_date = fields.Datetime(
         string='Ngày Nhập', default=fields.Datetime.now, readonly=True, copy=False
     )
@@ -67,6 +70,7 @@ class StockReceiptCard(models.Model):
         related='receipt_id.product_id',
     )
     
+  
     def action_export_cards(self):
         """Open popup to scan RFID tags for stock issuance from selected cards"""
         if not self:
@@ -121,6 +125,152 @@ class StockReceiptCard(models.Model):
             'location_id': picking_type.default_location_dest_id.id
         })
         
+    def action_export_cards_v3(self, picking=None):
+        """Open popup to scan RFID tags for stock issuance from selected cards"""
+        if not self:
+            raise UserError("Vui lòng chọn ít nhất một sản phẩm để xuất kho!")
+        
+        # product_quantities = {}
+        product_quantities = []
+        
+        for card in self:
+            # Kiểm tra trạng thái card
+            if card.status == 'output':
+                return f"Sản phẩm {card.name} đã được xuất kho!"
+                
+            # Tìm product variant
+            product = self.env['product.product'].search([
+                ('product_tmpl_id', '=', card.product_id.id)
+            ], limit=1)
+            
+            if not product:
+                return f"Không tìm thấy biến thể sản phẩm cho {card.product_id.name}!"
+            # Tìm stock lot tương ứng
+            lot = self.env['stock.lot'].search([
+                ('name', '=', card.name),
+            ], limit=1)
+                
+            product_quantities.append({'product_id': product.id, 'product_name':product.name, 'product_uom': product.uom_id.id, 'lot_id': lot.id if lot else None})
+
+        
+        # Kiểm tra picking có tồn tại
+        if not picking:
+            raise UserError("Không tìm thấy phiếu kho để xuất!")
+        
+        # Tạo stock.move cho từng sản phẩm
+        try:
+            move_vals_list = []
+            for product in product_quantities:
+                move_vals = {
+                    'picking_id': picking.id,
+                    'product_id': product.get('product_id'),
+                    'product_uom_qty': 1,
+                    'product_uom': product.get('product_uom'),
+                    'location_id': picking.location_id.id,
+                    'location_dest_id': picking.location_dest_id.id,
+                    'name': product.get('product_name'),
+                    'lot_id': product.get('lot_id'),  # Gán lot_id nếu có
+                    'lot_ids':[product.get('lot_id')]
+                }
+                
+                move_vals_list.append((0, 0, move_vals))
+
+            
+            # Tạo tất cả stock.move cùng lúc
+            picking.move_ids_without_package  =  [(5, 0, 0)]  # Xóa tất cả dòng hiện có trước khi thêm mới
+            picking.move_ids_without_package = move_vals_list
+            # Xử lý phiếu kho: xác nhận và phân bổ
+            if picking.state == 'draft':
+                picking.action_confirm()
+            
+            if picking.state == 'confirmed':
+                picking.action_assign()
+            
+            # Cập nhật trạng thái cards
+            self.write({
+                'picking_id': picking.id,
+                'location_id': picking.location_dest_id.id,
+            })
+            return "1"
+            
+        except Exception as e:
+            raise UserError(f"Lỗi khi tạo stock move: {str(e)}")
+    
+    def action_import_cards_v3(self, picking=None):
+        """Open popup to scan RFID tags for stock issuance from selected cards"""
+        """Open popup to scan RFID tags for stock issuance from selected cards"""
+        if not self:
+            raise UserError("Vui lòng chọn ít nhất một sản phẩm để xuất kho!")
+        
+        # product_quantities = {}
+        product_quantities = []
+        
+        for card in self:
+            # Kiểm tra trạng thái card
+            if card.status == 'input':
+                return f"Sản phẩm {card.name} đã được xuất kho!"
+                
+            # Tìm product variant
+            product = self.env['product.product'].search([
+                ('product_tmpl_id', '=', card.product_id.id)
+            ], limit=1)
+            
+            if not product:
+                return f"Không tìm thấy biến thể sản phẩm cho {card.product_id.name}!"
+            # Tìm stock lot tương ứng
+            lot = self.env['stock.lot'].search([
+                ('name', '=', card.name),
+            ], limit=1)
+                
+            product_quantities.append({'product_id': product.id, 'product_name':product.name, 'product_uom': product.uom_id.id, 'lot_id': lot.id if lot else None})
+        
+        # Kiểm tra picking có tồn tại
+        if not picking:
+            raise UserError("Không tìm thấy phiếu kho để xuất!")
+
+        # Tạo stock.move cho từng sản phẩm
+        try:
+            move_vals_list = []
+            for product in product_quantities:
+                _logger.info(product)
+                
+                move_vals = {
+                    'picking_id': picking.id,
+                    'product_id': product.get('product_id'),
+                    'product_uom_qty': 1,
+                    'product_uom': product.get('product_uom'),
+                    'location_id': picking.location_id.id,
+                    'location_dest_id': picking.location_dest_id.id,
+                    'name': product.get('product_name'),
+                    'lot_id': product.get('lot_id'),  # Gán lot_id nếu có
+                    'lot_ids':[product.get('lot_id')]
+            
+                }
+                move_vals_list.append((0, 0, move_vals))
+
+            # Tạo tất cả stock.move cùng lúc
+            picking.move_ids_without_package  =  [(5, 0, 0)]  # Xóa tất cả dòng hiện có trước khi thêm mới
+            picking.move_ids_without_package = move_vals_list
+            # Xử lý phiếu kho: xác nhận và phân bổ
+            
+            # Xử lý phiếu kho: xác nhận và phân bổ
+            if picking.state == 'draft':
+                picking.action_confirm()
+            
+            if picking.state == 'confirmed':
+                picking.action_assign()
+            
+            # Cập nhật trạng thái cards
+            self.write({
+            'picking_id': picking.id,
+            'location_id': picking.location_dest_id.id
+        })
+            return "1"
+            
+            
+        except Exception as e:
+            raise UserError(f"Lỗi khi tạo stock move: {str(e)}")
+    
     def action_export_cards_v2(self, picking=None, lot_ids=None):
         """Open popup to scan RFID tags for stock issuance from selected cards"""
         if not self:
@@ -338,3 +488,10 @@ class StockReceiptCard(models.Model):
             'picking_id': picking.id,
             'location_id': location_id.id
         })
+        
+    def action_inventory_history(self):
+        return {'type': 'ir.actions.act_window',
+                'res_model': 'stock.move.line',
+                'view_mode': 'list,form',
+                'views': [(False,'list'),(False,'form')],
+                'domain': [('lot_id', '=', self.lot_id.id if self.lot_id else -1)],}

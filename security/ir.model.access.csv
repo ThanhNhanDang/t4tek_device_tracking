@@ -4,3 +4,4 @@ access_stock_receipt_oprator,stock.receipt.operator,model_stock_receipt,operator
 access_stock_receipt_oprator_card,stock.receipt.card.operator,model_stock_receipt_card,operator,1,1,1,1
 access_ir_sequence_oprator,ir.sequence.operator,base.model_ir_sequence,operator,1,1,1,1
 access_model_stock_action_wizard,access_model_stock_action_wizard,model_stock_action_wizard,base.group_user,1,1,1,1
+access_product_card_list_2tab,access_product_card_list_2tab,model_product_card_list_2tab,base.group_user,1,1,1,1

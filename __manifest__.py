@@ -12,9 +12,12 @@
         [
         'security/access_user.xml',
         'security/ir.model.access.csv',
+        "data/product_card_list_2tab.xml",
+        "data/cron_jobs.xml",
         "views/stock_receipt_views.xml",
         "views/stock_picking_view.xml",
         "views/stock_move_line_view.xml",
+        "views/product_card_list_2tab_view.xml",
         "views/stock_action_wizard_view.xml",
         "views/stock_receipt_card_view.xml",
         "views/menu_views.xml",
@@ -27,6 +30,8 @@
             't4tek_device_tracking/static/src/css/backend/**/*',
             't4tek_device_tracking/static/src/xml/backend/**/*',
             't4tek_device_tracking/static/images/**/*',
+            't4tek_device_tracking/static/audio/*.wav',
+            
         ],
     },
     'license': 'LGPL-3',

@@ -38,11 +38,12 @@ class MainController(http.Controller):
             if card.state == "in" and card.status == "input":
                 if card.company_id:
                     request.env['bus.bus'].sudo()._sendone(
-                        card.company_id,
+                        "12344",
                         'card_notification',
                         {
                         }
                     )
+                    _logger.info(str(card.company_id.id))
                 return {'error': f'Card with TID {tid} is already in input state'}
             elif card.state != "in":
                 # card.action_import_cards()

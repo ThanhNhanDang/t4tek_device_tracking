@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="parking.BooleanIconField">
+        <View t-props="viewProps_move_history_in" t-if="props.isIn" />
+        <View t-props="viewProps_move_history_out" t-if="!props.isIn"/>
+    </t>
+</templates>

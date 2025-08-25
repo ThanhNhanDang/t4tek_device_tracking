@@ -10,6 +10,7 @@ import {onMounted} from '@odoo/owl'
 export class StockActionWizard extends FormController {
 	setup() {
 		super.setup();
+		console.log(this)
 		onMounted(() => {
 			const dialog = document.querySelector(".modal-dialog");
 			if (dialog) {
