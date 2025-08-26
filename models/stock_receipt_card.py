@@ -200,7 +200,7 @@ class StockReceiptCard(models.Model):
         """Open popup to scan RFID tags for stock issuance from selected cards"""
         """Open popup to scan RFID tags for stock issuance from selected cards"""
         if not self:
-            raise UserError("Vui lòng chọn ít nhất một sản phẩm để xuất kho!")
+            raise UserError("Vui lòng chọn ít nhất một sản phẩm để nhập kho!")
         
         # product_quantities = {}
         product_quantities = []
@@ -208,7 +208,7 @@ class StockReceiptCard(models.Model):
         for card in self:
             # Kiểm tra trạng thái card
             if card.status == 'input':
-                return f"Sản phẩm {card.name} đã được xuất kho!"
+                return f"Sản phẩm {card.name} đã được nhập kho!"
                 
             # Tìm product variant
             product = self.env['product.product'].search([
@@ -226,7 +226,7 @@ class StockReceiptCard(models.Model):
         
         # Kiểm tra picking có tồn tại
         if not picking:
-            raise UserError("Không tìm thấy phiếu kho để xuất!")
+            raise UserError("Không tìm thấy phiếu kho để nhập!")
 
         # Tạo stock.move cho từng sản phẩm
         try:
