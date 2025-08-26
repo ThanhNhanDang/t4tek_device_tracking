@@ -155,10 +155,10 @@ class StockReceipt(models.Model):
                 for card_id in self.card_ids:
                     if not card_id.lot_id:
                         lot_id = self._create_stock_quant_and_return_lot_id(product_variant, card_id.name)
-                        card_id.lot_id = lot_id.id
+                        card_id.lot_id = lot_id
                         self.picking_id.move_ids_without_package[count].write({
-                            'lot_id': lot_id.id,
-                            'lot_ids': [lot_id.id]
+                            'lot_id': lot_id,
+                            'lot_ids': [lot_id]
                         })
                         count += 1
                 return self._process_stock_picking()
