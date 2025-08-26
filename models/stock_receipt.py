@@ -139,7 +139,8 @@ class StockReceipt(models.Model):
         """Xác nhận phiếu nhập"""
         if self.quantity != len(self.card_ids):
             raise ValidationError("Số lượng thẻ cấp không khớp với số lượng yêu cầu!")
-        
+       
+
         # Create stock.picking
         # picking = self._create_stock_picking()
         # self.picking_id = picking.id
@@ -149,6 +150,17 @@ class StockReceipt(models.Model):
             if self.picking_id.state not in ['assigned','done']:
                 raise ValidationError("Chưa thể xác nhận lúc này!")
             else: 
+                product_variant = self.product_id.product_variant_ids[0] if self.product_id.product_variant_ids else False
+                count =0
+                for card_id in self.card_ids:
+                    if not card_id.lot_id:
+                        lot_id = self._create_stock_quant_and_return_lot_id(product_variant, card_id.name)
+                        card_id.lot_id = lot_id.id
+                        self.picking_id.move_ids_without_package[count].write({
+                            'lot_id': lot_id.id,
+                            'lot_ids': [lot_id.id]
+                        })
+                        count += 1
                 return self._process_stock_picking()
         else: 
             raise ValidationError("Chưa thể xác nhận lúc này!")
@@ -206,11 +218,9 @@ class StockReceipt(models.Model):
         for tag in tags:
             # Tạo thẻ RFID
             # Tạo stock.quant cho từng thẻ RFID
-            lot_id = self._create_stock_quant_and_return_lot_id(product_variant, tag['Tid'])
             card_vals = {
                 'name': tag['Tid'],
                 'receipt_id': self.id,
-                'lot_id' : lot_id,
                 'location_id': self.location_id.id,
             }
             card_records.append((0, 0, card_vals))
@@ -223,8 +233,6 @@ class StockReceipt(models.Model):
                     'location_dest_id': self.location_id.id,
                     'company_id': self.company_id.id,
                     'picking_id': self.picking_id.id,
-                    'lot_ids': [lot_id],
-                    'lot_id': lot_id
                 }
             # _logger.info(f"Creating move line for RFID {tag['Tid']}: {move_vals}")
             move_lines.append((0, 0, move_vals))
