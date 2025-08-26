@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+  
+
+    <t t-name="NoListRenderer" t-inherit-mode="primary" t-inherit="web.ListRenderer">
+        <xpath expr="//table/thead/tr/th" position="after">
+            <th class="o_list_record_selector o_list_controller align-middle pe-1 cursor-pointer no-col" tabindex="-1" style="min-width: 80px; width: 80px">
+                <div class="o-checkbox form-check d-flex m-0">
+                    <label class="form-check-label" for="checkbox-comp-1">No.</label>
+                </div>
+            </th>
+        </xpath>
+        <xpath expr="//tfoot/tr/t" position="before">
+            <t t-foreach="td_footer_num" t-as="td" t-key="td">
+                <td/>
+            </t>
+        </xpath>
+    </t>
+    <t t-name="NoListRendererRecordRow" t-inherit-mode="primary" t-inherit="web.ListRenderer.RecordRow">
+        <xpath expr="//tr/td" position="after">
+            <th class="o_list_record_selector o_list_controller align-middle pe-1 cursor-pointer" tabindex="-1"  style="min-width: 80px; width: 80px">
+                <div class="o-checkbox form-check d-flex m-0">
+                    <label class="form-check-label" t-att-for="props.id or id" t-out="record_index + 1"></label>
+                </div>
+            </th>
+        </xpath>
+    </t>
+</templates>

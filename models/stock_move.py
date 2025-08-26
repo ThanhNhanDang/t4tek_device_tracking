@@ -10,3 +10,4 @@ class StockMove(models.Model):
     lot_id = fields.Many2one('stock.lot', string='Số Lô / Số Seri', ondelete='restrict', tracking=True)
     def _merge_moves(self, merge_into=False):
         return self
+    

@@ -32,10 +32,24 @@
         <field name="path">receipt</field>
         <field name="view_mode">list,kanban,form,calendar,activity</field>
         <field name="domain">[('is_device_tracking', '=', True)]</field>
-        <field name="context">{'contact_display': 'partner_address', 'restricted_picking_type_code':  
-            'incoming', 'search_default_reception': 1, 'is_oper':True, 'from_menu':1, 'default_is_device_tracking': True, 'create':0}</field>
+        <field name="context">{'contact_display': 'partner_address', 'restricted_picking_type_code':
+            'incoming', 'search_default_reception': 1, 'is_oper':True, 'from_menu':1, 'outgoing':0
+            'default_is_device_tracking': True, 'create':0}</field>
         <field name="search_view_id" ref="stock.view_picking_internal_search" />
     </record>
+
+    <record id="action_t4tek_picking_tree_incoming_create" model="ir.actions.act_window">
+        <field name="name">Phiếu Nhập Kho</field>
+        <field name="res_model">stock.picking</field>
+        <field name="path">create_receipt</field>
+        <field name="view_mode">list,kanban,form,calendar,activity</field>
+        <field name="domain">[('is_device_tracking', '=', True)]</field>
+        <field name="context">{'contact_display': 'partner_address', 'restricted_picking_type_code':
+            'incoming', 'search_default_reception': 1, 'is_oper':True, 'from_menu':1, 'outgoing':0
+            'default_is_device_tracking': True}</field>
+        <field name="search_view_id" ref="stock.view_picking_internal_search" />
+    </record>
+
 
     <record id="action_t4tek_picking_tree_outgoing" model="ir.actions.act_window">
         <field name="name">Phiếu Xuất Kho</field>
@@ -43,9 +57,36 @@
         <field name="path">deliverie</field>
         <field name="view_mode">list,kanban,form,calendar,activity</field>
         <field name="domain">[('is_device_tracking', '=', True)]</field>
-        <field name="context">{'contact_display': 'partner_address', 'restricted_picking_type_code': 
-            'outgoing', 'search_default_delivery': 1, 'is_oper':True, 'from_menu':1, 'default_is_device_tracking': True, 'create':0}</field>
+        <field name="context">{'contact_display': 'partner_address', 'restricted_picking_type_code':
+            'outgoing', 'search_default_delivery': 1, 'is_oper':True, 'from_menu':1, 'outgoing':1
+            'default_is_device_tracking': True, 'create':0}</field>
         <field name="search_view_id" ref="stock.view_picking_internal_search" />
+    </record>
+
+    <record id="action_t4tek_picking_tree_outgoing_create" model="ir.actions.act_window">
+        <field name="name">Phiếu Xuất Kho</field>
+        <field name="res_model">stock.picking</field>
+        <field name="path">create_deliverie</field>
+        <field name="view_mode">list,kanban,form,calendar,activity</field>
+        <field name="domain">[('is_device_tracking', '=', True)]</field>
+        <field name="context">{'contact_display': 'partner_address', 'restricted_picking_type_code':
+            'outgoing', 'search_default_delivery': 1, 'is_oper':True, 'from_menu':1, 'outgoing':1
+            'default_is_device_tracking': True}</field>
+        <field name="search_view_id" ref="stock.view_picking_internal_search" />
+    </record>
+
+    <record id="view_t4tek_picking_tree" model="ir.ui.view">
+        <field name="name">t4tek.stock.picking.tree</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.vpicktree" />
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="t4tek_stock_picking_type_incoming"
+                    column_invisible="context.get('outgoing')" />
+                <field name="t4tek_stock_picking_type_outgoing"
+                    column_invisible="not context.get('outgoing')" />
+            </field>
+        </field>
     </record>
 
     <record id="view_t4tek_picking_form" model="ir.ui.view">
@@ -54,16 +95,44 @@
         <field name="inherit_id" ref="stock.view_picking_form" />
         <field name="arch" type="xml">
             <button name="action_confirm" position="replace">
-                <button name="action_confirm" invisible="state != 'draft' or context.get('is_oper',False)" string="Đánh dấu việc cần làm" type="object" class="oe_highlight" groups="base.group_user" data-hotkey="q"/>
-                <field name="stock_receipt_id" invisible="1"/>
-                <button name="action_generate_cards" invisible="not stock_receipt_id or state in ['cancel','done']" string="Cấp thẻ" type="object" class="oe_highlight"  data-hotkey="q"/>
-                <button name="action_scan_cards" invisible="stock_receipt_id or state in ['cancel','done']" string="Quét" type="object" class="oe_highlight"  data-hotkey="q">
+                <button name="action_confirm"
+                    invisible="state != 'draft' or context.get('is_oper',False)"
+                    string="Đánh dấu việc cần làm" type="object" class="oe_highlight"
+                    groups="base.group_user" data-hotkey="q" />
+                <field name="stock_receipt_id" invisible="1" />
+                <button name="action_generate_cards"
+                    invisible="not stock_receipt_id or state in ['cancel','done']" string="Cấp thẻ"
+                    type="object" class="oe_highlight" data-hotkey="q" />
+                <button name="action_scan_cards"
+                    invisible="stock_receipt_id or state in ['cancel','done'] or is_loading" string="Quét"
+                    type="object" class="oe_highlight" data-hotkey="q">
                     Quét
                 </button>
+
+                <button name="action_cancer_scan" type="object"
+                    class="btn btn-danger"
+                    invisible="stock_receipt_id or state in ['cancel','done'] or not is_loading">
+                    <div
+                        class="spinner-border spinner-border-sm" role="status"
+                        style="width: 16px; height: 16px;"
+                    >
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    Dừng quét thẻ </button>
             </button>
             <page name="note" position="attributes">
                 <attribute name="string">Ghi chú &amp; Hình ảnh xác minh</attribute>
             </page>
+            <field name="picking_type_id" position="before">
+                <field name="t4tek_stock_picking_type_incoming"
+                    invisible="picking_type_code =='outgoing'" />
+                <field name="t4tek_stock_picking_type_outgoing"
+                    invisible="picking_type_code =='incoming'" />
+            </field>
+            <field name="picking_type_id" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </field>
+
             <field name="quantity" position="attributes">
                 <attribute name="column_invisible">1</attribute>
             </field>
@@ -77,14 +146,14 @@
                 <attribute name="column_invisible">1</attribute>
             </field> -->
             <field name="product_uom_qty" position="before">
-                <field name="lot_id" readonly="1" options="{'no_create': True}"/>
+                <field name="lot_id" readonly="1" options="{'no_create': True}" />
             </field>
             <field name="move_ids_without_package" position="attributes">
                 <attribute name="readonly">0</attribute>
-            </field> 
+            </field>
             <field name="note" position="after">
                 <label for="image_tracking">Hình ảnh xác minh:</label>
-                <field name="image_tracking" widget="image" readonly="1"/>
+                <field name="image_tracking" widget="image" readonly="1" />
             </field>
         </field>
     </record>

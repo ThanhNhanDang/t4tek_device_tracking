@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Tree View for Stock Card Form -->
+    <record id="stock_card_form_tree_view" model="ir.ui.view">
+        <field name="name">stock.card.form.tree</field>
+        <field name="model">stock.card.form</field>
+        <field name="arch" type="xml">
+            <list string="Phiếu cấp thẻ">
+                <field name="name" />
+                <field name="product_type_id" />
+                <field name="card_quantity" />
+                <field name="create_date" />
+            </list>
+        </field>
+    </record>
+
+    <!-- Form View for Stock Card Form -->
+    <record id="stock_card_form_form_view" model="ir.ui.view">
+        <field name="name">stock.card.form.form</field>
+        <field name="model">stock.card.form</field>
+        <field name="arch" type="xml">
+            <form string="Phiếu cấp thẻ" create="0">
+                <header>
+                    <button name="action_generate_cards" type="object" string="Quét thẻ"
+                        class="btn btn-primary" invisible="state == 'done' or is_loading" />
+                    <button name="action_cancer_scan" type="object"
+                        class="btn btn-danger" invisible="state == 'done' or not is_loading">
+                        <div
+                            class="spinner-border spinner-border-sm" role="status"
+                            style="width: 16px; height: 16px;"
+                        >
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        Dừng quét thẻ </button>
+                    <button name="action_confirm" type="object" string="Xác nhận"
+                        class="btn btn-success" invisible="state == 'done'" />
+                    <field name="state" widget="statusbar" statusbar_visible="draft,done" />
+                </header>
+                <sheet>
+                    <group>
+                        <field name="name" invisible="1" />
+                        <field name="product_type_id" />
+                        <field name="card_quantity" />
+                    </group>
+                    <notebook>
+                        <page string="Danh sách thẻ">
+                            <field name="card_line_ids" widget="no_column_one2many" readonly="1">
+                                <list editable="bottom">
+                                    <field name="card_code" />
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Kanban View for Stock Card Form -->
+    <record id="stock_card_form_kanban_view" model="ir.ui.view">
+        <field name="name">stock.card.form.kanban</field>
+        <field name="model">stock.card.form</field>
+        <field name="arch" type="xml">
+            <kanban>
+                <field name="name" />
+                <field name="product_type_id" />
+                <field name="card_quantity" />
+                <field name="card_line_ids" />
+                <templates>
+                    <t t-name="kanban-box">
+                        <div class="oe_kanban_global_click">
+                            <div class="oe_kanban_details">
+                                <strong>
+                                    <field name="name" />
+                                </strong>
+                                <div>Loại sản phẩm: <field name="product_type_id" /></div>
+                                <div>Số lượng thẻ: <field name="card_quantity" /></div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- Action to open the view -->
+    <record id="stock_card_form_action" model="ir.actions.act_window">
+        <field name="name">Phiếu cấp thẻ</field>
+        <field name="res_model">stock.card.form</field>
+        <field name="view_mode">list,form,kanban</field>
+    </record>
+    <record id="stock_card_form_new_action" model="ir.actions.act_window">
+        <field name="name">Tạo cấp thẻ</field>
+        <field name="res_model">stock.card.form</field>
+        <field name="view_mode">form</field>
+    </record>
+</odoo>

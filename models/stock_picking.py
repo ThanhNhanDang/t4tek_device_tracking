@@ -10,6 +10,32 @@ class StockPicking(models.Model):
     is_device_tracking = fields.Boolean(default=False, string='Theo dõi thiết bị')
     image_tracking = fields.Image("Hình ảnh xác minh", max_width=1024, max_height=1024)
     stock_receipt_id = fields.Many2one('stock.receipt', string='Phiếu Ghi Nhận', required=False, ondelete='cascade')
+    t4tek_stock_picking_type_incoming = fields.Selection([
+        ('first_input', 'Nhận lần đầu'),
+        ('re_input', 'Nhận tái nhận'),
+        ('warranty_input', 'Nhận bảo hành'),
+        ('fisnish_good_input', 'Nhận thành phẩm'),
+    ], string='Hình thức')
+    t4tek_stock_picking_type_outgoing = fields.Selection([
+        ('return_output', 'Xuất trả NCC'),
+        ('ware_output', 'Xuất kho khác'),
+        ('sale_output', 'Xuất bán'),
+        ('warranty_after_output', 'Xuất sau bảo hành')
+    ], string='Hình thức')
+    
+    is_loading = fields.Boolean("Loading", default=False)
+    
+    def action_cancer_scan(self):
+        self.is_loading = False
+        if self.env.context.get('uuid_client', False):
+            self.env['bus.bus'].sudo()._sendone(
+                self.env.context.get('uuid_client', False),
+                self.env.context.get('uuid_client', False),
+                {
+                    "type":"cancel_scan",
+                    'no_open_popup': True,
+                }
+            )
     
     def action_generate_cards(self):
         if not self.stock_receipt_id:
@@ -29,12 +55,13 @@ class StockPicking(models.Model):
                     "model": self._name,
                     'receipt_name': "Tạo phiếu nhập kho",
                     'receipt_type': 'incoming',
-                    "is_create_auto":True
+                    "is_create_auto":True,
                 }
             )
         return {'type': 'ir.actions.act_window_close'}
     
     def action_scan_cards(self):
+        self.is_loading = True
         if self.env.context.get('uuid_client', False):
             self.env['bus.bus'].sudo()._sendone(
                 self.env.context.get('uuid_client', False),
@@ -42,9 +69,11 @@ class StockPicking(models.Model):
                 {
                     "type":"scan_cards",
                     "model": self._name,
+                    "id": self.id,
                     'receipt_name': self.picking_type_code == 'incoming' and "Tạo phiếu nhập kho" or "Tạo phiếu xuất kho",
                     'receipt_type': self.picking_type_code,
-                    "is_create_auto":False
+                    "is_create_auto":False,
+                    'no_open_popup': True,
                 }
             )
         return {'type': 'ir.actions.act_window_close'}
@@ -117,16 +146,24 @@ class StockPicking(models.Model):
             'is_device_tracking':True,  # Đánh dấu là phiếu xuất kho thiết bị
         })
         return picking_vals
-    
 
     
     def callback_scan_cards(self, tags, picking_type):
-        _logger.info("=================================")
+        _logger.info(f"================================={picking_type   }")
+        
+        
         """Callback function to process scanned RFID tags"""
         if not tags:
             return "Không có thẻ nào được quét!"
         records = []
-       
+        if self.picking_type_code == "incoming":
+            if self.t4tek_stock_picking_type_incoming == 'first_input':
+                for tag in tags:
+                    card = self.env['stock.card.line'].search([('card_code', '=', tag['Tid']), ('is_done','=',True)], limit=1)
+                    if not card:
+                        return f"Thẻ {tag['Tid']} không tồn tại trong hệ thống!"
+                    
+                    
         error_messages = []
         
         for tag in tags:
@@ -236,6 +273,125 @@ class StockPicking(models.Model):
                 return f"Lỗi khi xuất kho: {str(e)}"
         
         return "1"
+    
+    # def callback_scan_cards(self, tags, picking_type):
+    #     _logger.info(f"================================={tags}")
+        
+        
+    #     """Callback function to process scanned RFID tags"""
+    #     if not tags:
+    #         return "Không có thẻ nào được quét!"
+    #     records = []
+       
+    #     error_messages = []
+        
+    #     for tag in tags:
+    #         # Kiểm tra tag có đúng format không
+    #         if not isinstance(tag, dict) or 'Tid' not in tag:
+    #             error_messages.append("Format thẻ không hợp lệ!")
+    #             continue
+                
+    #         # Tìm stock receipt card
+    #         card_record = self.env['stock.receipt.card'].search([
+    #             ('name', '=', tag['Tid']),
+    #         ], limit=1)
+            
+    #         if not card_record:
+    #             error_messages.append(f"Sản phẩm có mã {tag['Tid']} không tồn tại trong hệ thống.")
+    #             continue
+                
+    #         records.append(card_record)
+            
+            
+        
+    #     # Nếu có lỗi trong quá trình scan
+    #     if error_messages:
+    #         return '; '.join(error_messages)
+        
+    #     # Nếu không có records nào hợp lệ
+    #     if not records:
+    #         return "Không tìm thấy sản phẩm hợp lệ nào!"
+    #     if self.id == False:
+
+    #         picking = None
+    #         if picking_type == 'outgoing':
+    #             picking = self._create_stock_picking_outgoing()
+    #         elif picking_type == 'incoming':
+    #             picking = self._create_stock_picking_incoming()
+    #         if picking.picking_type_code == 'outgoing':
+    #             try:
+    #                 # Chuyển đổi list thành recordset
+    #                 card_recordset = self.env['stock.receipt.card'].browse([r.id for r in records])
+                    
+    #                 # Gọi method xuất kho
+    #                 result = card_recordset.action_export_cards_v3(
+    #                     picking=picking,
+    #                 )
+                    
+    #                 if result != "1":
+    #                     return result
+                    
+    #             except Exception as e:
+    #                 return f"Lỗi khi xuất kho: {str(e)}"
+    #         elif picking.picking_type_code == 'incoming':
+    #             try:
+    #                 # Chuyển đổi list thành recordset
+    #                 card_recordset = self.env['stock.receipt.card'].browse([r.id for r in records])
+                    
+    #                 # Gọi method xuất kho
+    #                 result = card_recordset.action_import_cards_v3(
+    #                     picking=picking,
+    #                 )
+    #                 if result != "1":
+    #                     return result
+                    
+    #             except Exception as e:
+    #                 return f"Lỗi khi xuất kho: {str(e)}"
+    #         return clean_action({'type': 'ir.actions.act_window',
+    #                 'name': _('Phiếu tái nhập kho'if picking.picking_type_code == 'incoming' else 'Phiếu xuất kho'),
+    #                 'res_model': 'stock.picking',
+    #                 'view_mode': 'form',
+    #                 'views': [(False, 'form')],  # ✅ Đúng format: list of tuples
+    #                 "res_id": picking.id,
+    #                 'target': 'current',
+    #                 'context': 
+    #                {'contact_display': 'partner_address', 'restricted_picking_type_code':  
+    #                     'incoming', 'search_default_reception': 1, 'is_oper':True, 'from_menu':1, 'default_is_device_tracking': True, 'create':0}
+                                
+    #             }, self.env)
+            
+    #     # Xử lý xuất kho nếu là picking type outgoing
+    #     if self.picking_type_code == 'outgoing':
+    #         try:
+    #             # Chuyển đổi list thành recordset
+    #             card_recordset = self.env['stock.receipt.card'].browse([r.id for r in records])
+                
+    #             # Gọi method xuất kho
+    #             result = card_recordset.action_export_cards_v3(
+    #                 picking=self,
+    #             )
+                
+    #             return result if result else "1"
+                
+    #         except Exception as e:
+    #             return f"Lỗi khi xuất kho: {str(e)}"
+    #     elif self.picking_type_code == 'incoming':
+    #         try:
+    #             # Chuyển đổi list thành recordset
+    #             card_recordset = self.env['stock.receipt.card'].browse([r.id for r in records])
+                
+    #             # Gọi method xuất kho
+    #             result = card_recordset.action_import_cards_v3(
+    #                 picking=self,
+               
+    #             )
+                
+    #             return result if result else "1"
+                
+    #         except Exception as e:
+    #             return f"Lỗi khi xuất kho: {str(e)}"
+        
+    #     return "1"
     
     
     def callback_scan_cards_outgoing(self, tags):

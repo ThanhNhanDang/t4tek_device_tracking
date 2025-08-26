@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="product_type_computer" model="product.type">
+        <field name="name">Máy tính</field>
+        <field name="description">Loại sản phẩm bao gồm các thiết bị máy tính cá nhân</field>
+    </record>
+    <record id="product_type_ram" model="product.type">
+        <field name="name">Thanh RAM</field>
+        <field name="description">Bộ nhớ RAM cho máy tính</field>
+    </record>
+    <record id="product_type_storage" model="product.type">
+        <field name="name">Ổ cứng</field>
+        <field name="description">Thiết bị lưu trữ như SSD, HDD</field>
+    </record>
+</odoo>

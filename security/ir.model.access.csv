@@ -5,3 +5,8 @@ access_stock_receipt_oprator_card,stock.receipt.card.operator,model_stock_receip
 access_ir_sequence_oprator,ir.sequence.operator,base.model_ir_sequence,operator,1,1,1,1
 access_model_stock_action_wizard,access_model_stock_action_wizard,model_stock_action_wizard,base.group_user,1,1,1,1
 access_product_card_list_2tab,access_product_card_list_2tab,model_product_card_list_2tab,base.group_user,1,1,1,1
+access_model_stock_card_form,access_model_stock_card_form,model_stock_card_form,operator,1,1,1,1
+access_stock_card_line_operator,access.stock.card.line.operator,model_stock_card_line,operator,1,1,1,1
+access_model_stock_card_form_operator,access.stock.card.form.operator,model_stock_card_form,operator,1,1,1,1
+access_model_product_type_operator,access_model_product_type_operator,model_product_type,operator,1,1,1,1
+access_model_t4tek_stock_picking_type_operator,access_model_t4tek_stock_picking_type_operator,model_t4tek_stock_picking_type,operator,1,1,1,1

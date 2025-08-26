@@ -22,7 +22,6 @@ class StockReceipt(models.Model):
     
     state = fields.Selection([
         ('draft', 'Nháp'),
-        ('confirmed', 'Đã Xác Nhận'),
         ('done', 'Hoàn Thành'),
         ('cancelled', 'Đã Hủy')
     ], string='Trạng Thái', default='draft')
@@ -139,7 +138,6 @@ class StockReceipt(models.Model):
         """Xác nhận phiếu nhập"""
         if self.quantity != len(self.card_ids):
             raise ValidationError("Số lượng thẻ cấp không khớp với số lượng yêu cầu!")
-       
 
         # Create stock.picking
         # picking = self._create_stock_picking()

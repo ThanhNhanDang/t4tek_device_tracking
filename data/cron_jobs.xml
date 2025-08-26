@@ -9,7 +9,5 @@
             <field name="interval_type">minutes</field>
             <field name="active" eval="True" />
         </record>
-
-       
     </data>
 </odoo>
