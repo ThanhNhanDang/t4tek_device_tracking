@@ -178,6 +178,6 @@
         <field name="res_model">stock.receipt</field>
         <field name="target">current</field>
         <field name="view_mode">form</field>
-        <field name="context">{'default_name':'Phiếu nhập kho lần đầu','isDontClose':1}</field>
+        <field name="context">{'default_name':'Phiếu nhập kho lần đầu'}</field>
     </record>
 </odoo>
