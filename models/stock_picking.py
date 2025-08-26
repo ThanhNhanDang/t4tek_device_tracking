@@ -29,6 +29,7 @@ class StockPicking(models.Model):
                     "model": self._name,
                     'receipt_name': "Tạo phiếu nhập kho",
                     'receipt_type': 'incoming',
+                    "is_create_auto":True
                 }
             )
         return {'type': 'ir.actions.act_window_close'}
@@ -43,6 +44,7 @@ class StockPicking(models.Model):
                     "model": self._name,
                     'receipt_name': self.picking_type_code == 'incoming' and "Tạo phiếu nhập kho" or "Tạo phiếu xuất kho",
                     'receipt_type': self.picking_type_code,
+                    "is_create_auto":False
                 }
             )
         return {'type': 'ir.actions.act_window_close'}
@@ -57,6 +59,7 @@ class StockPicking(models.Model):
                     "model": self._name,
                     'receipt_name': "Tạo phiếu xuất kho",
                     'receipt_type': 'outgoing',
+                    "is_create_auto":True
                 }
             )
         return {'type': 'ir.actions.act_window_close'}
@@ -153,6 +156,7 @@ class StockPicking(models.Model):
         if not records:
             return "Không tìm thấy sản phẩm hợp lệ nào!"
         if self.id == False:
+
             picking = None
             if picking_type == 'outgoing':
                 picking = self._create_stock_picking_outgoing()
