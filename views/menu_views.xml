@@ -22,7 +22,7 @@
         parent="operator_view_root" sequence="13" action="stock.product_template_action_product" />
     <menuitem id="menu_inventory_first_receipt" name="Phiếu Nhập Kho Lần Đầu"
         parent="menu_inventory" sequence="13" action="action_stock_receipt" />
-    <menuitem id="menu_inventory_receipt" name="Phiếu Tái Nhập Kho"
+    <menuitem id="menu_inventory_receipt" name="Phiếu Nhập Kho"
         parent="menu_inventory" sequence="14" action="action_t4tek_picking_tree_incoming" />
     <menuitem id="menu_inventory_out" name="Phiếu Xuất Kho"
         parent="menu_inventory" sequence="14" action="action_t4tek_picking_tree_outgoing" />

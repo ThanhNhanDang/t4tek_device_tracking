@@ -383,7 +383,6 @@ class StockPicking(models.Model):
                     return super(StockPicking, self).button_validate()
             if not self.stock_receipt_id:
                 raise ValidationError(_("Phiếu Ghi Nhận Chưa Có."))
-            
            
             
             # Kiểm tra xem đã có hình ảnh chưa
