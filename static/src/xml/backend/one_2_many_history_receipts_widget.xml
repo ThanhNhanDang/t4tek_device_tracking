@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="t4tek.BooleanIconFieldReceipt">
+        <View t-props="viewProps_first_input" t-if="props.type=='first_input'" />
+        <View t-props="viewProps_re_input" t-elif="props.type=='re_input'"/>
+        <View t-props="viewProps_warranty_input" t-elif="props.type=='warranty_input'"/>
+        <View t-props="viewProps_fisnish_good_input" t-elif="props.type=='fisnish_good_input'"/>
+    </t>
+</templates>

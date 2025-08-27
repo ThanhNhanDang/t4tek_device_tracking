@@ -1,0 +1,8 @@
+<odoo noupdate="1">
+    <data noupdate="1">
+        <record id="product_card_2tab_record3" model="product_card_list.2tab">
+            <field name="custom_view_field">True</field>
+            <field name="name">Phiếu Xuất Kho</field>
+        </record>
+    </data>
+</odoo>

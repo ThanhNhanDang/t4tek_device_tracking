@@ -9,5 +9,5 @@ from . import product_card_list_2tab
 from . import stock_card_form
 from . import stock_card_line
 from . import product_type
-from . import t4tek_stock_picking_type
 from . import product_template
+from . import product_creation_wizard

@@ -11,10 +11,10 @@ class StockPicking(models.Model):
     image_tracking = fields.Image("Hình ảnh xác minh", max_width=1024, max_height=1024)
     stock_receipt_id = fields.Many2one('stock.receipt', string='Phiếu Ghi Nhận', required=False, ondelete='cascade')
     t4tek_stock_picking_type_incoming = fields.Selection([
-        ('first_input', 'Nhận lần đầu'),
-        ('re_input', 'Nhận tái nhận'),
-        ('warranty_input', 'Nhận bảo hành'),
-        ('fisnish_good_input', 'Nhận thành phẩm'),
+        ('first_input', 'Nhập lần đầu'),
+        ('re_input', 'Tái Nhập'),
+        ('warranty_input', 'Nhập để bảo hành'),
+        ('fisnish_good_input', 'Nhập thành phẩm'),
     ], string='Hình thức')
     t4tek_stock_picking_type_outgoing = fields.Selection([
         ('return_output', 'Xuất trả NCC'),

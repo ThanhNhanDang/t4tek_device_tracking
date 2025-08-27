@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="t4tek.BooleanIconFieldDelivery">
+        <View t-props="viewProps_return_output" t-if="props.type=='return_output'" />
+        <View t-props="viewProps_ware_output" t-elif="props.type=='ware_output'"/>
+        <View t-props="viewProps_sale_output" t-elif="props.type=='sale_output'"/>
+        <View t-props="viewProps_warranty_after_output" t-elif="props.type=='warranty_after_output'"/>
+    </t>
+</templates>

@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Form view cho Product Creation -->
+    <record id="product_creation_wizard_form_view" model="ir.ui.view">
+        <field name="name">product.creation.wizard.form</field>
+        <field name="model">product.creation.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Tạo Sản Phẩm Mới">
+                <header>
+                    <button name="action_print" string="In Phiếu Xác Nhận" type="object" class="oe_highlight"/>
+                    <button name="action_create_product" string="Xác Nhận" type="object" class="oe_highlight" invisible="state == 'created'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,created"/>
+                </header>
+
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Nhập tên thành phẩm..." required="1" readonly="state == 'created'"/>
+                        </h1>
+                    </div>
+
+                    <group>
+                        <group>
+                            <field name="product_id" invisible="state != 'created'"/>
+                            <field name="create_uid" invisible="state != 'created'"/>
+                            <field name="create_date" invisible="state != 'created'"/>
+                        </group>
+                    </group>
+
+                    <group string="Nguyên Vật Liệu">
+                        <field name="component_ids" nolabel="1" readonly="state == 'created'">
+                            <list string="Danh Sách Nguyên Vật Liệu">
+                                <field name="name"/>
+                                <field name="tracking"/>
+                            </list>
+                        </field>
+                    </group>
+
+                    <!-- <div class="alert alert-info mt-3" role="alert">
+                        <i class="fa fa-info-circle"/>
+                        <strong>Thông tin:</strong> Sản phẩm sẽ được tạo với loại "Storable Product" và tracking theo "Serial Number"
+                    </div> -->
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Tree view cho lịch sử -->
+    <record id="product_creation_wizard_tree_view" model="ir.ui.view">
+        <field name="name">product.creation.wizard.tree</field>
+        <field name="model">product.creation.wizard</field>
+        <field name="arch" type="xml">
+            <list string="Lịch Sử Tạo Sản Phẩm" decoration-success="state == 'created'">
+                <field name="name"/>
+                <field name="product_id"/>
+                <field name="state" widget="badge" decoration-success="state == 'created'" decoration-info="state == 'draft'"/>
+                <field name="create_uid"/>
+                <field name="create_date"/>
+                <button name="action_view_product" string="Xem Sản Phẩm" type="object" icon="fa-eye" invisible="state != 'created'"/>
+            </list>
+        </field>
+    </record>
+
+
+
+    <!-- Action để mở form tạo mới -->
+    <record id="product_creation_wizard_action" model="ir.actions.act_window">
+        <field name="name">Tạo Sản Phẩm Mới</field>
+        <field name="res_model">product.creation.wizard</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'create':0}</field>
+        <field name="view_id" ref="product_creation_wizard_tree_view"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Tạo thành phẩm mới
+            </p>
+        </field>
+    </record>
+
+    <!-- Action để tạo record mới -->
+    <record id="product_creation_wizard_create_action" model="ir.actions.act_window">
+        <field name="name">Cấp Thẻ Cho Thành Phẩm Mới</field>
+        <field name="res_model">product.creation.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="product_creation_wizard_form_view"/>
+        <field name="target">current</field>
+    </record>
+
+    <!-- Menu item chính -->
+    <!-- <menuitem id="product_creation_wizard_menu" name="Quản Lý Sản Phẩm" parent="stock.menu_stock_root" action="product_creation_wizard_action" sequence="5" groups="stock.group_stock_user"/> -->
+
+    <!-- Submenu để tạo mới -->
+
+
+    <!-- Submenu để xem lịch sử -->
+    <!-- <menuitem id="product_creation_wizard_history_menu" name="Lịch Sử Tạo Sản Phẩm" parent="product_creation_wizard_menu" action="product_creation_wizard_action" sequence="2" groups="stock.group_stock_user"/> -->
+
+</odoo>
