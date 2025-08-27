@@ -15,13 +15,13 @@ class StockPicking(models.Model):
         ('re_input', 'Tái Nhập'),
         ('warranty_input', 'Nhập để bảo hành'),
         ('fisnish_good_input', 'Nhập thành phẩm'),
-    ], string='Hình thức')
+    ], string='Loại Nhập')
     t4tek_stock_picking_type_outgoing = fields.Selection([
         ('return_output', 'Xuất trả NCC'),
         ('ware_output', 'Xuất kho khác'),
         ('sale_output', 'Xuất bán'),
         ('warranty_after_output', 'Xuất sau bảo hành')
-    ], string='Hình thức')
+    ], string='Loại Xuất')
     
     is_loading = fields.Boolean("Loading", default=False)
     
